@@ -1,0 +1,109 @@
+{
+  "_comment": "3-DOF robotic arm digital twin - master configuration.",
+  "_comment2": "Geometry values were measured from 3-DOF-robotic_arm.blend. Do not edit",
+  "_comment3": "the 'blender' blocks unless the model changes. Tune 'motor', 'limits'",
+  "_comment4": "and 'safety' freely - those are the calibration knobs.",
+
+  "version": 1,
+  "model_file": "blender file/3-DOF-robotic_arm.blend",
+
+  "serial": {
+    "port": "COM4",
+    "baud": 115200,
+    "read_timeout_s": 1.0,
+    "boot_settle_s": 2.5,
+    "poll_interval_s": 0.25,
+    "_note": "COM4 detected as 'USB-SERIAL CH340'. Uno resets when the port opens; boot_settle_s waits it out."
+  },
+
+  "safety": {
+    "max_travel_deg": 10.0,
+    "max_command_delta_deg": 10.0,
+    "step_interval_us": 8000,
+    "min_step_interval_us": 1200,
+    "watchdog_ms": 4000,
+    "hold_torque": false,
+    "require_arm_before_move": true,
+    "_note_max_travel": "Soft limit each joint to +/- this many degrees from home. Start at 10.",
+    "_note_delta": "Largest angle change accepted in one command. Start at 10.",
+    "_note_speed": "8000 us/step = 125 steps/s = ~1.8 RPM at 4076 steps/rev. Very slow on purpose.",
+    "_note_min": "Never go below 1200 us/step - a 28BYJ-48 stalls and loses position.",
+    "_note_watchdog": "Firmware halts if no serial traffic for this long while moving. 0 disables.",
+    "_note_hold": "false releases the coils when idle (cool, no holding torque). true holds position."
+  },
+
+  "joints": [
+    {
+      "id": 0,
+      "name": "BASE",
+      "label": "Base",
+      "description": "Yaw. Rotates the whole assembly about the base motor's vertical output shaft.",
+      "blender": {
+        "axis": [0.0, 0.0, 1.0],
+        "pivot": [-0.401576, 0.0, 1.384290],
+        "moves": ["bottom_joint", "lowerarm_join", "upperarm_joint", "end_effector"],
+        "_measured_from": "base output post centre (-0.40103, -0.00001) == bottom_joint origin"
+      },
+      "motor": {
+        "pins": [2, 3, 4, 5],
+        "steps_per_rev": 4076.0,
+        "gear_ratio": 1.0,
+        "direction": 1,
+        "backlash_steps": 0
+      },
+      "limits": { "min_deg": -10.0, "max_deg": 10.0, "offset_deg": 0.0 }
+    },
+    {
+      "id": 1,
+      "name": "MIDDLE",
+      "label": "Middle",
+      "description": "Shoulder pitch. Swings the lower arm about the bottom_joint motor shaft.",
+      "blender": {
+        "axis": [0.0, 1.0, 0.0],
+        "pivot": [-0.784127, -1.105872, 2.897107],
+        "moves": ["lowerarm_join", "upperarm_joint", "end_effector"],
+        "_measured_from": "bottom_joint -Y shaft centre (-0.78470, *, 2.89589) == lowerarm_join origin"
+      },
+      "motor": {
+        "pins": [6, 7, 8, 9],
+        "steps_per_rev": 4076.0,
+        "gear_ratio": 1.0,
+        "direction": -1,
+        "backlash_steps": 0
+      },
+      "limits": { "min_deg": -10.0, "max_deg": 10.0, "offset_deg": 0.0 }
+    },
+    {
+      "id": 2,
+      "name": "UPPER",
+      "label": "Upper",
+      "description": "Elbow pitch. Swings the upper arm about the lowerarm_join motor shaft.",
+      "blender": {
+        "axis": [0.0, 1.0, 0.0],
+        "pivot": [-0.410570, 0.0, 7.835087],
+        "moves": ["upperarm_joint", "end_effector"],
+        "_measured_from": "lowerarm_join +Y shaft face centre (-0.40297, *, 7.82755) == upperarm_joint origin"
+      },
+      "motor": {
+        "pins": [10, 11, 12, 13],
+        "steps_per_rev": 4076.0,
+        "gear_ratio": 1.0,
+        "direction": -1,
+        "backlash_steps": 0
+      },
+      "limits": { "min_deg": -10.0, "max_deg": 10.0, "offset_deg": 0.0 }
+    }
+  ],
+
+  "static_objects": ["base"],
+  "end_effector_object": "end_effector",
+
+  "_calibration_howto": [
+    "steps_per_rev: 4076 is the exact 28BYJ-48 half-step figure (63.68395 gearbox x 64).",
+    "Many people use 4096. Yours may differ by a few counts between motors - that is what",
+    "this field is for. To calibrate: home the joint, command +10 deg ten times (100 deg),",
+    "measure the real angle, then set steps_per_rev = old_value * commanded / measured.",
+    "gear_ratio: >1 if the motor drives the joint through extra reduction.",
+    "direction: flip to -1 if the physical joint moves opposite to the Blender joint."
+  ]
+}
